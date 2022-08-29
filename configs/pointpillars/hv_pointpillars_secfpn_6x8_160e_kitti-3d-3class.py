@@ -25,11 +25,12 @@ file_client_args = dict(backend='disk')
 
 db_sampler = dict(
     data_root=data_root,
-    info_path=data_root + 'kitti_dbinfos_train.pkl',
+    info_path=f'{data_root}kitti_dbinfos_train.pkl',
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
-        filter_by_min_points=dict(Car=5, Pedestrian=5, Cyclist=5)),
+        filter_by_min_points=dict(Car=5, Pedestrian=5, Cyclist=5),
+    ),
     classes=class_names,
     sample_groups=dict(Car=15, Pedestrian=15, Cyclist=15),
     points_loader=dict(
@@ -37,8 +38,11 @@ db_sampler = dict(
         coord_type='LIDAR',
         load_dim=4,
         use_dim=4,
-        file_client_args=file_client_args),
-    file_client_args=file_client_args)
+        file_client_args=file_client_args,
+    ),
+    file_client_args=file_client_args,
+)
+
 
 # PointPillars uses different augmentation hyper parameters
 train_pipeline = [

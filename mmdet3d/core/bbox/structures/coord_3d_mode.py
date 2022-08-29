@@ -164,14 +164,12 @@ class Coord3DMode(IntEnum):
                 'CoordMode.convert takes either a k-tuple/list or '
                 'an Nxk array/tensor, where k >= 3')
             arr = torch.tensor(point)[None, :]
+        elif is_numpy:
+            arr = torch.from_numpy(np.asarray(point)).clone()
+        elif is_InstancePoints:
+            arr = point.tensor.clone()
         else:
-            # avoid modifying the input point
-            if is_numpy:
-                arr = torch.from_numpy(np.asarray(point)).clone()
-            elif is_InstancePoints:
-                arr = point.tensor.clone()
-            else:
-                arr = point.clone()
+            arr = point.clone()
 
         # convert point from `src` mode to `dst` mode.
         if src == Coord3DMode.LIDAR and dst == Coord3DMode.CAM:

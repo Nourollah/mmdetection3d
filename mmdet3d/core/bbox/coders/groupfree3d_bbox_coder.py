@@ -113,8 +113,7 @@ class GroupFree3DBBoxCoder(PartialBinBasedBBoxCoder):
             bbox_size = size_base.reshape(batch_size, num_proposal,
                                           -1) + size_res.squeeze(2)
 
-        bbox3d = torch.cat([center, bbox_size, dir_angle], dim=-1)
-        return bbox3d
+        return torch.cat([center, bbox_size, dir_angle], dim=-1)
 
     def split_pred(self, cls_preds, reg_preds, base_xyz, prefix=''):
         """Split predicted features to specific parts.
@@ -129,7 +128,6 @@ class GroupFree3DBBoxCoder(PartialBinBasedBBoxCoder):
         Returns:
             dict[str, torch.Tensor]: Split results.
         """
-        results = {}
         start, end = 0, 0
 
         cls_preds_trans = cls_preds.transpose(2, 1)
@@ -137,17 +135,20 @@ class GroupFree3DBBoxCoder(PartialBinBasedBBoxCoder):
 
         # decode center
         end += 3
-        # (batch_size, num_proposal, 3)
-        results[f'{prefix}center_residual'] = \
-            reg_preds_trans[..., start:end].contiguous()
+        results = {
+            f'{prefix}center_residual': reg_preds_trans[
+                ..., start:end
+            ].contiguous()
+        }
+
         results[f'{prefix}center'] = base_xyz + \
-            reg_preds_trans[..., start:end].contiguous()
+                reg_preds_trans[..., start:end].contiguous()
         start = end
 
         # decode direction
         end += self.num_dir_bins
         results[f'{prefix}dir_class'] = \
-            reg_preds_trans[..., start:end].contiguous()
+                reg_preds_trans[..., start:end].contiguous()
         start = end
 
         end += self.num_dir_bins
@@ -162,7 +163,7 @@ class GroupFree3DBBoxCoder(PartialBinBasedBBoxCoder):
         if self.size_cls_agnostic:
             end += 3
             results[f'{prefix}size'] = \
-                reg_preds_trans[..., start:end].contiguous()
+                    reg_preds_trans[..., start:end].contiguous()
         else:
             end += self.num_sizes
             results[f'{prefix}size_class'] = reg_preds_trans[

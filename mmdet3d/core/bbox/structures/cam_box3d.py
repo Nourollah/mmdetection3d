@@ -100,9 +100,7 @@ class CameraInstance3DBoxes(BaseInstance3DBoxes):
         """
         yaw = self.yaw
         loc = self.gravity_center
-        local_yaw = yaw2local(yaw, loc)
-
-        return local_yaw
+        return yaw2local(yaw, loc)
 
     @property
     def gravity_center(self):
@@ -277,8 +275,7 @@ class CameraInstance3DBoxes(BaseInstance3DBoxes):
         heighest_of_bottom = torch.min(boxes1_bottom_height,
                                        boxes2_bottom_height)
         lowest_of_top = torch.max(boxes1_top_height, boxes2_top_height)
-        overlaps_h = torch.clamp(heighest_of_bottom - lowest_of_top, min=0)
-        return overlaps_h
+        return torch.clamp(heighest_of_bottom - lowest_of_top, min=0)
 
     def convert_to(self, dst, rt_mat=None):
         """Convert self to ``dst`` mode.
@@ -324,8 +321,7 @@ class CameraInstance3DBoxes(BaseInstance3DBoxes):
             boxes_lidar = Coord3DMode.convert(self.tensor, Coord3DMode.CAM,
                                               Coord3DMode.LIDAR)
 
-        box_idx = super().points_in_boxes_part(points_lidar, boxes_lidar)
-        return box_idx
+        return super().points_in_boxes_part(points_lidar, boxes_lidar)
 
     def points_in_boxes_all(self, points, boxes_override=None):
         """Find all boxes in which each point is.
@@ -350,5 +346,4 @@ class CameraInstance3DBoxes(BaseInstance3DBoxes):
             boxes_lidar = Coord3DMode.convert(self.tensor, Coord3DMode.CAM,
                                               Coord3DMode.LIDAR)
 
-        box_idx = super().points_in_boxes_all(points_lidar, boxes_lidar)
-        return box_idx
+        return super().points_in_boxes_all(points_lidar, boxes_lidar)

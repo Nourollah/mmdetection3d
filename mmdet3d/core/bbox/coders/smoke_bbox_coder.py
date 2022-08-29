@@ -43,11 +43,8 @@ class SMOKECoder(BaseBBoxCoder):
 
         bboxes = torch.cat((locations, dimensions, orientations), dim=1)
         assert bboxes.shape[1] == self.bbox_code_size, 'bboxes shape dose not'\
-            'match the bbox_code_size.'
-        batch_bboxes = input_metas[0]['box_type_3d'](
-            bboxes, box_dim=self.bbox_code_size)
-
-        return batch_bboxes
+                'match the bbox_code_size.'
+        return input_metas[0]['box_type_3d'](bboxes, box_dim=self.bbox_code_size)
 
     def decode(self,
                reg,
@@ -107,9 +104,7 @@ class SMOKECoder(BaseBBoxCoder):
     def _decode_depth(self, depth_offsets):
         """Transform depth offset to depth."""
         base_depth = depth_offsets.new_tensor(self.base_depth)
-        depths = depth_offsets * base_depth[1] + base_depth[0]
-
-        return depths
+        return depth_offsets * base_depth[1] + base_depth[0]
 
     def _decode_location(self, points, centers2d_offsets, depths, cam2imgs,
                          trans_mats):
@@ -164,9 +159,7 @@ class SMOKECoder(BaseBBoxCoder):
         labels = labels.flatten().long()
         base_dims = dims_offset.new_tensor(self.base_dims)
         dims_select = base_dims[labels, :]
-        dimensions = dims_offset.exp() * dims_select
-
-        return dimensions
+        return dims_offset.exp() * dims_select
 
     def _decode_orientation(self, ori_vector, locations):
         """Retrieve object orientation.

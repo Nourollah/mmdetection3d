@@ -120,42 +120,43 @@ eval_pipeline = [
 data = dict(
     samples_per_gpu=8,
     workers_per_gpu=4,
-    # train on area 1, 2, 3, 4, 6
-    # test on area 5
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_files=[
-            data_root + f's3dis_infos_Area_{i}.pkl' for i in train_area
-        ],
+        ann_files=[f'{data_root}s3dis_infos_Area_{i}.pkl' for i in train_area],
         pipeline=train_pipeline,
         classes=class_names,
         test_mode=False,
         ignore_index=len(class_names),
         scene_idxs=[
-            data_root + f'seg_info/Area_{i}_resampled_scene_idxs.npy'
+            f'{data_root}seg_info/Area_{i}_resampled_scene_idxs.npy'
             for i in train_area
         ],
-        file_client_args=file_client_args),
+        file_client_args=file_client_args,
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_files=data_root + f's3dis_infos_Area_{test_area}.pkl',
+        ann_files=f'{data_root}s3dis_infos_Area_{test_area}.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         ignore_index=len(class_names),
-        scene_idxs=data_root +
-        f'seg_info/Area_{test_area}_resampled_scene_idxs.npy',
-        file_client_args=file_client_args),
+        scene_idxs=data_root
+        + f'seg_info/Area_{test_area}_resampled_scene_idxs.npy',
+        file_client_args=file_client_args,
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_files=data_root + f's3dis_infos_Area_{test_area}.pkl',
+        ann_files=f'{data_root}s3dis_infos_Area_{test_area}.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         ignore_index=len(class_names),
-        file_client_args=file_client_args))
+        file_client_args=file_client_args,
+    ),
+)
+
 
 evaluation = dict(pipeline=eval_pipeline)

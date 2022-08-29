@@ -140,9 +140,9 @@ def bbox_overlaps_nearest_3d(bboxes1,
     bboxes1_bev = bboxes1.nearest_bev
     bboxes2_bev = bboxes2.nearest_bev
 
-    ret = bbox_overlaps(
-        bboxes1_bev, bboxes2_bev, mode=mode, is_aligned=is_aligned)
-    return ret
+    return bbox_overlaps(
+        bboxes1_bev, bboxes2_bev, mode=mode, is_aligned=is_aligned
+    )
 
 
 def bbox_overlaps_3d(bboxes1, bboxes2, mode='iou', coordinate='camera'):
@@ -203,8 +203,7 @@ class AxisAlignedBboxOverlaps3D(object):
 
     def __repr__(self):
         """str: a string describing the module"""
-        repr_str = self.__class__.__name__ + '()'
-        return repr_str
+        return f'{self.__class__.__name__}()'
 
 
 def axis_aligned_bbox_overlaps_3d(bboxes1,
@@ -292,10 +291,7 @@ def axis_aligned_bbox_overlaps_3d(bboxes1,
         wh = (rb - lt).clamp(min=0)  # [B, rows, 2]
         overlap = wh[..., 0] * wh[..., 1] * wh[..., 2]
 
-        if mode in ['iou', 'giou']:
-            union = area1 + area2 - overlap
-        else:
-            union = area1
+        union = area1 + area2 - overlap if mode in ['iou', 'giou'] else area1
         if mode == 'giou':
             enclosed_lt = torch.min(bboxes1[..., :3], bboxes2[..., :3])
             enclosed_rb = torch.max(bboxes1[..., 3:], bboxes2[..., 3:])
@@ -325,5 +321,4 @@ def axis_aligned_bbox_overlaps_3d(bboxes1,
     enclose_wh = (enclosed_rb - enclosed_lt).clamp(min=0)
     enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1] * enclose_wh[..., 2]
     enclose_area = torch.max(enclose_area, eps)
-    gious = ious - (enclose_area - union) / enclose_area
-    return gious
+    return ious - (enclose_area - union) / enclose_area

@@ -72,14 +72,16 @@ class PartialBinBasedBBoxCoder(BaseBBoxCoder):
         Returns:
             torch.Tensor: Decoded bbox3d with shape (batch, n, 7).
         """
-        center = bbox_out['center' + suffix]
+        center = bbox_out[f'center{suffix}']
         batch_size, num_proposal = center.shape[:2]
 
         # decode heading angle
         if self.with_rot:
-            dir_class = torch.argmax(bbox_out['dir_class' + suffix], -1)
-            dir_res = torch.gather(bbox_out['dir_res' + suffix], 2,
-                                   dir_class.unsqueeze(-1))
+            dir_class = torch.argmax(bbox_out[f'dir_class{suffix}'], -1)
+            dir_res = torch.gather(
+                bbox_out[f'dir_res{suffix}'], 2, dir_class.unsqueeze(-1)
+            )
+
             dir_res.squeeze_(2)
             dir_angle = self.class2angle(dir_class, dir_res).reshape(
                 batch_size, num_proposal, 1)
@@ -87,17 +89,19 @@ class PartialBinBasedBBoxCoder(BaseBBoxCoder):
             dir_angle = center.new_zeros(batch_size, num_proposal, 1)
 
         # decode bbox size
-        size_class = torch.argmax(
-            bbox_out['size_class' + suffix], -1, keepdim=True)
-        size_res = torch.gather(bbox_out['size_res' + suffix], 2,
-                                size_class.unsqueeze(-1).repeat(1, 1, 1, 3))
+        size_class = torch.argmax(bbox_out[f'size_class{suffix}'], -1, keepdim=True)
+        size_res = torch.gather(
+            bbox_out[f'size_res{suffix}'],
+            2,
+            size_class.unsqueeze(-1).repeat(1, 1, 1, 3),
+        )
+
         mean_sizes = center.new_tensor(self.mean_sizes)
         size_base = torch.index_select(mean_sizes, 0, size_class.reshape(-1))
         bbox_size = size_base.reshape(batch_size, num_proposal,
                                       -1) + size_res.squeeze(2)
 
-        bbox3d = torch.cat([center, bbox_size, dir_angle], dim=-1)
-        return bbox3d
+        return torch.cat([center, bbox_size, dir_angle], dim=-1)
 
     def decode_corners(self, center, size_res, size_class):
         """Decode center, size residuals and class to corners. Only useful for
@@ -134,8 +138,7 @@ class PartialBinBasedBBoxCoder(BaseBBoxCoder):
         half_size_full = size_full / 2
         corner1 = center - half_size_full
         corner2 = center + half_size_full
-        corners = torch.cat([corner1, corner2], dim=-1)
-        return corners
+        return torch.cat([corner1, corner2], dim=-1)
 
     def split_pred(self, cls_preds, reg_preds, base_xyz):
         """Split predicted features to specific parts.
@@ -148,7 +151,6 @@ class PartialBinBasedBBoxCoder(BaseBBoxCoder):
         Returns:
             dict[str, torch.Tensor]: Split results.
         """
-        results = {}
         start, end = 0, 0
 
         cls_preds_trans = cls_preds.transpose(2, 1)
@@ -156,9 +158,7 @@ class PartialBinBasedBBoxCoder(BaseBBoxCoder):
 
         # decode center
         end += 3
-        # (batch_size, num_proposal, 3)
-        results['center'] = base_xyz + \
-            reg_preds_trans[..., start:end].contiguous()
+        results = {'center': (base_xyz + reg_preds_trans[..., start:end].contiguous())}
         start = end
 
         # decode direction

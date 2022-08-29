@@ -50,7 +50,7 @@ def box3d_multiclass_nms(mlvl_bboxes,
     dir_scores = []
     attr_scores = []
     bboxes2d = []
-    for i in range(0, num_classes):
+    for i in range(num_classes):
         # get bboxes and scores of this class
         cls_inds = mlvl_scores[:, i] > score_thr
         if not cls_inds.any():
@@ -59,11 +59,7 @@ def box3d_multiclass_nms(mlvl_bboxes,
         _scores = mlvl_scores[cls_inds, i]
         _bboxes_for_nms = mlvl_bboxes_for_nms[cls_inds, :]
 
-        if cfg.use_rotate_nms:
-            nms_func = nms_bev
-        else:
-            nms_func = nms_normal_bev
-
+        nms_func = nms_bev if cfg.use_rotate_nms else nms_normal_bev
         selected = nms_func(_bboxes_for_nms, _scores, cfg.nms_thr)
         _mlvl_bboxes = mlvl_bboxes[cls_inds, :]
         bboxes.append(_mlvl_bboxes[selected])
@@ -174,8 +170,7 @@ def aligned_3d_nms(boxes, scores, classes, thresh):
         score_sorted = score_sorted[torch.nonzero(
             iou <= thresh, as_tuple=False).flatten()]
 
-    indices = boxes.new_tensor(pick, dtype=torch.long)
-    return indices
+    return boxes.new_tensor(pick, dtype=torch.long)
 
 
 @numba.jit(nopython=True)
@@ -219,10 +214,7 @@ def circle_nms(dets, thresh, post_max_size=83):
             if dist <= thresh:
                 suppressed[j] = 1
 
-    if post_max_size < len(keep):
-        return keep[:post_max_size]
-
-    return keep
+    return keep[:post_max_size] if post_max_size < len(keep) else keep
 
 
 # This function duplicates functionality of mmcv.ops.iou_3d.nms_bev

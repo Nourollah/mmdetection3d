@@ -107,7 +107,7 @@ class_names = ['Pedestrian', 'Cyclist', 'Car']
 input_modality = dict(use_lidar=True, use_camera=False)
 db_sampler = dict(
     data_root=data_root,
-    info_path=data_root + 'kitti_dbinfos_train.pkl',
+    info_path=f'{data_root}kitti_dbinfos_train.pkl',
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
@@ -115,13 +115,16 @@ db_sampler = dict(
             Car=5,
             Pedestrian=5,
             Cyclist=5,
-        )),
+        ),
+    ),
     classes=class_names,
     sample_groups=dict(
         Car=15,
         Pedestrian=15,
         Cyclist=15,
-    ))
+    ),
+)
+
 
 train_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=4, use_dim=4),
@@ -178,33 +181,38 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'kitti_infos_train.pkl',
+        ann_file=f'{data_root}kitti_infos_train.pkl',
         split='training',
         pts_prefix='velodyne_reduced',
         pipeline=train_pipeline,
         modality=input_modality,
         classes=class_names,
-        test_mode=False),
+        test_mode=False,
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'kitti_infos_val.pkl',
+        ann_file=f'{data_root}kitti_infos_val.pkl',
         split='training',
         pts_prefix='velodyne_reduced',
         pipeline=test_pipeline,
         modality=input_modality,
         classes=class_names,
-        test_mode=True),
+        test_mode=True,
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'kitti_infos_val.pkl',
+        ann_file=f'{data_root}kitti_infos_val.pkl',
         split='training',
         pts_prefix='velodyne_reduced',
         pipeline=test_pipeline,
         modality=input_modality,
         classes=class_names,
-        test_mode=True))
+        test_mode=True,
+    ),
+)
+
 # optimizer
 lr = 0.0003  # max learning rate
 optimizer = dict(

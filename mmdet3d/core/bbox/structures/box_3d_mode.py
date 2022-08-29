@@ -98,14 +98,12 @@ class Box3DMode(IntEnum):
                 'Box3DMode.convert takes either a k-tuple/list or '
                 'an Nxk array/tensor, where k >= 7')
             arr = torch.tensor(box)[None, :]
+        elif is_numpy:
+            arr = torch.from_numpy(np.asarray(box)).clone()
+        elif is_Instance3DBoxes:
+            arr = box.tensor.clone()
         else:
-            # avoid modifying the input box
-            if is_numpy:
-                arr = torch.from_numpy(np.asarray(box)).clone()
-            elif is_Instance3DBoxes:
-                arr = box.tensor.clone()
-            else:
-                arr = box.clone()
+            arr = box.clone()
 
         if is_Instance3DBoxes:
             with_yaw = box.with_yaw

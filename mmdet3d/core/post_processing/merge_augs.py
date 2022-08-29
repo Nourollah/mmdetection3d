@@ -50,11 +50,7 @@ def merge_aug_bboxes_3d(aug_results, img_metas, test_cfg):
     aug_labels = torch.cat(recovered_labels, dim=0)
 
     # TODO: use a more elegent way to deal with nms
-    if test_cfg.use_rotate_nms:
-        nms_func = nms_bev
-    else:
-        nms_func = nms_normal_bev
-
+    nms_func = nms_bev if test_cfg.use_rotate_nms else nms_normal_bev
     merged_bboxes = []
     merged_scores = []
     merged_labels = []

@@ -21,8 +21,7 @@ def limit_period(val, offset=0.5, period=np.pi):
         (torch.Tensor | np.ndarray): Value in the range of
             [-offset * period, (1-offset) * period]
     """
-    limited_val = val - torch.floor(val / period + offset) * period
-    return limited_val
+    return val - torch.floor(val / period + offset) * period
 
 
 @array_converter(apply_to=('points', 'angles'))
@@ -70,19 +69,19 @@ def rotation_3d_in_axis(points,
     zeros = torch.zeros_like(rot_cos)
 
     if points.shape[-1] == 3:
-        if axis == 1 or axis == -2:
+        if axis in [1, -2]:
             rot_mat_T = torch.stack([
                 torch.stack([rot_cos, zeros, -rot_sin]),
                 torch.stack([zeros, ones, zeros]),
                 torch.stack([rot_sin, zeros, rot_cos])
             ])
-        elif axis == 2 or axis == -1:
+        elif axis in [2, -1]:
             rot_mat_T = torch.stack([
                 torch.stack([rot_cos, rot_sin, zeros]),
                 torch.stack([-rot_sin, rot_cos, zeros]),
                 torch.stack([zeros, zeros, ones])
             ])
-        elif axis == 0 or axis == -3:
+        elif axis in [0, -3]:
             rot_mat_T = torch.stack([
                 torch.stack([ones, zeros, zeros]),
                 torch.stack([zeros, rot_cos, rot_sin]),
@@ -108,13 +107,12 @@ def rotation_3d_in_axis(points,
     if batch_free:
         points_new = points_new.squeeze(0)
 
-    if return_mat:
-        rot_mat_T = torch.einsum('jka->ajk', rot_mat_T)
-        if batch_free:
-            rot_mat_T = rot_mat_T.squeeze(0)
-        return points_new, rot_mat_T
-    else:
+    if not return_mat:
         return points_new
+    rot_mat_T = torch.einsum('jka->ajk', rot_mat_T)
+    if batch_free:
+        rot_mat_T = rot_mat_T.squeeze(0)
+    return points_new, rot_mat_T
 
 
 @array_converter(apply_to=('boxes_xywhr', ))
@@ -243,9 +241,7 @@ def points_img2cam(points, cam2img):
     # Do operation in homogeneous coordinates.
     num_points = unnormed_xys.shape[0]
     homo_xys = torch.cat([unnormed_xys, xys.new_ones((num_points, 1))], dim=1)
-    points3D = torch.mm(homo_xys, inv_pad_cam2img)[:, :3]
-
-    return points3D
+    return torch.mm(homo_xys, inv_pad_cam2img)[:, :3]
 
 
 def mono_cam_box2vis(cam_box):
@@ -307,7 +303,7 @@ def get_proj_mat_by_coord_type(img_meta, coord_type):
     """
     coord_type = coord_type.upper()
     mapping = {'LIDAR': 'lidar2img', 'DEPTH': 'depth2img', 'CAMERA': 'cam2img'}
-    assert coord_type in mapping.keys()
+    assert coord_type in mapping
     return img_meta[mapping[coord_type]]
 
 

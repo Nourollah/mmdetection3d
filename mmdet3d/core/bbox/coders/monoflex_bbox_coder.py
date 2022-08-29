@@ -101,9 +101,7 @@ class MonoFlexCoder(BaseBBoxCoder):
             encode_local_yaw[inds, i] = 1
             encode_local_yaw[inds, i + self.num_dir_bins] = offset[inds]
 
-        orientation_target = encode_local_yaw
-
-        return orientation_target
+        return encode_local_yaw
 
     def decode(self, bbox, base_centers2d, labels, downsample_ratio, cam2imgs):
         """Decode bounding box regression into 3D predictions.
@@ -192,11 +190,11 @@ class MonoFlexCoder(BaseBBoxCoder):
             pred_depth = torch.cat(
                 (pred_direct_depth.unsqueeze(-1), pred_keypoints_depth), dim=1)
             pred_combined_depth = \
-                self.combine_depths(pred_depth, pred_depth_uncertainty)
+                    self.combine_depths(pred_depth, pred_depth_uncertainty)
         else:
             pred_combined_depth = None
 
-        preds = dict(
+        return dict(
             bboxes2d=pred_bboxes2d,
             dimensions=pred_dimensions,
             offsets2d=pred_offsets2d,
@@ -208,8 +206,6 @@ class MonoFlexCoder(BaseBBoxCoder):
             direct_depth_uncertainty=pred_direct_depth_uncertainty,
             keypoints_depth_uncertainty=pred_keypoints_depth_uncertainty,
         )
-
-        return preds
 
     def decode_direct_depth(self, depth_offsets):
         """Transform depth offset to directly regressed depth.
@@ -488,9 +484,7 @@ class MonoFlexCoder(BaseBBoxCoder):
         xs_max = centers_x + reg_bboxes2d[..., 2]
         ys_max = centers_y + reg_bboxes2d[..., 3]
 
-        bboxes2d = torch.stack([xs_min, ys_min, xs_max, ys_max], dim=-1)
-
-        return bboxes2d
+        return torch.stack([xs_min, ys_min, xs_max, ys_max], dim=-1)
 
     def combine_depths(self, depth, depth_uncertainty):
         """Combine all the prediced depths with depth uncertainty.
@@ -508,8 +502,6 @@ class MonoFlexCoder(BaseBBoxCoder):
         """
         uncertainty_weights = 1 / depth_uncertainty
         uncertainty_weights = \
-            uncertainty_weights / \
-            uncertainty_weights.sum(dim=1, keepdim=True)
-        combined_depth = torch.sum(depth * uncertainty_weights, dim=1)
-
-        return combined_depth
+                uncertainty_weights / \
+                uncertainty_weights.sum(dim=1, keepdim=True)
+        return torch.sum(depth * uncertainty_weights, dim=1)

@@ -197,33 +197,32 @@ class CenterPointBBoxCoder(BaseBBoxCoder):
         if self.score_threshold is not None:
             thresh_mask = final_scores > self.score_threshold
 
-        if self.post_center_range is not None:
-            self.post_center_range = torch.tensor(
-                self.post_center_range, device=heat.device)
-            mask = (final_box_preds[..., :3] >=
-                    self.post_center_range[:3]).all(2)
-            mask &= (final_box_preds[..., :3] <=
-                     self.post_center_range[3:]).all(2)
-
-            predictions_dicts = []
-            for i in range(batch):
-                cmask = mask[i, :]
-                if self.score_threshold:
-                    cmask &= thresh_mask[i]
-
-                boxes3d = final_box_preds[i, cmask]
-                scores = final_scores[i, cmask]
-                labels = final_preds[i, cmask]
-                predictions_dict = {
-                    'bboxes': boxes3d,
-                    'scores': scores,
-                    'labels': labels
-                }
-
-                predictions_dicts.append(predictions_dict)
-        else:
+        if self.post_center_range is None:
             raise NotImplementedError(
                 'Need to reorganize output as a batch, only '
                 'support post_center_range is not None for now!')
 
+        self.post_center_range = torch.tensor(
+            self.post_center_range, device=heat.device)
+        mask = (final_box_preds[..., :3] >=
+                self.post_center_range[:3]).all(2)
+        mask &= (final_box_preds[..., :3] <=
+                 self.post_center_range[3:]).all(2)
+
+        predictions_dicts = []
+        for i in range(batch):
+            cmask = mask[i, :]
+            if self.score_threshold:
+                cmask &= thresh_mask[i]
+
+            boxes3d = final_box_preds[i, cmask]
+            scores = final_scores[i, cmask]
+            labels = final_preds[i, cmask]
+            predictions_dict = {
+                'bboxes': boxes3d,
+                'scores': scores,
+                'labels': labels
+            }
+
+            predictions_dicts.append(predictions_dict)
         return predictions_dicts

@@ -39,7 +39,7 @@ class BasePoints(object):
             tensor = tensor.reshape((0, points_dim)).to(
                 dtype=torch.float32, device=device)
         assert tensor.dim() == 2 and tensor.size(-1) == \
-            points_dim, tensor.size()
+                points_dim, tensor.size()
 
         self.tensor = tensor
         self.points_dim = points_dim
@@ -67,7 +67,7 @@ class BasePoints(object):
         """torch.Tensor:
             A vector with height of each point in shape (N, 1), or None."""
         if self.attribute_dims is not None and \
-                'height' in self.attribute_dims.keys():
+                    'height' in self.attribute_dims.keys():
             return self.tensor[:, self.attribute_dims['height']]
         else:
             return None
@@ -82,12 +82,12 @@ class BasePoints(object):
         if not isinstance(tensor, torch.Tensor):
             tensor = self.tensor.new_tensor(tensor)
         if self.attribute_dims is not None and \
-                'height' in self.attribute_dims.keys():
+                    'height' in self.attribute_dims.keys():
             self.tensor[:, self.attribute_dims['height']] = tensor
         else:
             # add height attribute
             if self.attribute_dims is None:
-                self.attribute_dims = dict()
+                self.attribute_dims = {}
             attr_dim = self.shape[1]
             self.tensor = torch.cat([self.tensor, tensor.unsqueeze(1)], dim=1)
             self.attribute_dims.update(dict(height=attr_dim))
@@ -98,7 +98,7 @@ class BasePoints(object):
         """torch.Tensor:
             A vector with color of each point in shape (N, 3), or None."""
         if self.attribute_dims is not None and \
-                'color' in self.attribute_dims.keys():
+                    'color' in self.attribute_dims.keys():
             return self.tensor[:, self.attribute_dims['color']]
         else:
             return None
@@ -115,12 +115,12 @@ class BasePoints(object):
         if not isinstance(tensor, torch.Tensor):
             tensor = self.tensor.new_tensor(tensor)
         if self.attribute_dims is not None and \
-                'color' in self.attribute_dims.keys():
+                    'color' in self.attribute_dims.keys():
             self.tensor[:, self.attribute_dims['color']] = tensor
         else:
             # add color attribute
             if self.attribute_dims is None:
-                self.attribute_dims = dict()
+                self.attribute_dims = {}
             attr_dim = self.shape[1]
             self.tensor = torch.cat([self.tensor, tensor], dim=1)
             self.attribute_dims.update(
@@ -216,13 +216,14 @@ class BasePoints(object):
             torch.Tensor: A binary vector indicating whether each point is
                 inside the reference range.
         """
-        in_range_flags = ((self.tensor[:, 0] > point_range[0])
-                          & (self.tensor[:, 1] > point_range[1])
-                          & (self.tensor[:, 2] > point_range[2])
-                          & (self.tensor[:, 0] < point_range[3])
-                          & (self.tensor[:, 1] < point_range[4])
-                          & (self.tensor[:, 2] < point_range[5]))
-        return in_range_flags
+        return (
+            (self.tensor[:, 0] > point_range[0])
+            & (self.tensor[:, 1] > point_range[1])
+            & (self.tensor[:, 2] > point_range[2])
+            & (self.tensor[:, 0] < point_range[3])
+            & (self.tensor[:, 1] < point_range[4])
+            & (self.tensor[:, 2] < point_range[5])
+        )
 
     @property
     def bev(self):
@@ -240,11 +241,12 @@ class BasePoints(object):
             torch.Tensor: Indicating whether each point is inside
                 the reference range.
         """
-        in_range_flags = ((self.bev[:, 0] > point_range[0])
-                          & (self.bev[:, 1] > point_range[1])
-                          & (self.bev[:, 0] < point_range[2])
-                          & (self.bev[:, 1] < point_range[3]))
-        return in_range_flags
+        return (
+            (self.bev[:, 0] > point_range[0])
+            & (self.bev[:, 1] > point_range[1])
+            & (self.bev[:, 0] < point_range[2])
+            & (self.bev[:, 1] < point_range[3])
+        )
 
     @abstractmethod
     def convert_to(self, dst, rt_mat=None):
@@ -305,7 +307,7 @@ class BasePoints(object):
             if isinstance(item[1], slice):
                 start = 0 if item[1].start is None else item[1].start
                 stop = self.tensor.shape[1] if \
-                    item[1].stop is None else item[1].stop
+                        item[1].stop is None else item[1].stop
                 step = 1 if item[1].step is None else item[1].step
                 item = list(item)
                 item[1] = list(range(start, stop, step))
@@ -341,7 +343,7 @@ class BasePoints(object):
             raise NotImplementedError(f'Invalid slice {item}!')
 
         assert p.dim() == 2, \
-            f'Indexing on Points with {item} failed to return a matrix!'
+                f'Indexing on Points with {item} failed to return a matrix!'
         return original_type(
             p, points_dim=p.shape[1], attribute_dims=attribute_dims)
 
@@ -368,13 +370,11 @@ class BasePoints(object):
             return cls(torch.empty(0))
         assert all(isinstance(points, cls) for points in points_list)
 
-        # use torch.cat (v.s. layers.cat)
-        # so the returned points never share storage with input
-        cat_points = cls(
+        return cls(
             torch.cat([p.tensor for p in points_list], dim=0),
             points_dim=points_list[0].tensor.shape[1],
-            attribute_dims=points_list[0].attribute_dims)
-        return cat_points
+            attribute_dims=points_list[0].attribute_dims,
+        )
 
     def to(self, device):
         """Convert current points to a specific device.
@@ -431,8 +431,12 @@ class BasePoints(object):
             :obj:`BasePoints`: A new point object with ``data``,
                 the object's other properties are similar to ``self``.
         """
-        new_tensor = self.tensor.new_tensor(data) \
-            if not isinstance(data, torch.Tensor) else data.to(self.device)
+        new_tensor = (
+            data.to(self.device)
+            if isinstance(data, torch.Tensor)
+            else self.tensor.new_tensor(data)
+        )
+
         original_type = type(self)
         return original_type(
             new_tensor,

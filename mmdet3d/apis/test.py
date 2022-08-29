@@ -51,8 +51,6 @@ def single_gpu_test(model,
                     out_dir=out_dir,
                     show=show,
                     score_thr=show_score_thr)
-            # Visualize the results of MMDetection model
-            # 'show_result' is MMdetection visualization API
             else:
                 batch_size = len(result)
                 if batch_size == 1 and isinstance(data['img'][0],
@@ -71,11 +69,7 @@ def single_gpu_test(model,
                     ori_h, ori_w = img_meta['ori_shape'][:-1]
                     img_show = mmcv.imresize(img_show, (ori_w, ori_h))
 
-                    if out_dir:
-                        out_file = osp.join(out_dir, img_meta['ori_filename'])
-                    else:
-                        out_file = None
-
+                    out_file = osp.join(out_dir, img_meta['ori_filename']) if out_dir else None
                     model.module.show_result(
                         img_show,
                         result[i],

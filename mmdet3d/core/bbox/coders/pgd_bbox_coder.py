@@ -47,7 +47,7 @@ class PGDBBoxCoder(FCOS3DBBoxCoder):
             scale_kpts = scale[3]
             # 2 dimension of offsets x 8 corners of a 3D bbox
             bbox[:, self.bbox_code_size:self.bbox_code_size + 16] = \
-                torch.tanh(scale_kpts(clone_bbox[
+                    torch.tanh(scale_kpts(clone_bbox[
                     :, self.bbox_code_size:self.bbox_code_size + 16]).float())
 
         if pred_bbox2d:
@@ -62,12 +62,11 @@ class PGDBBoxCoder(FCOS3DBBoxCoder):
                 if pred_keypoints:
                     bbox[
                         :, self.bbox_code_size:self.bbox_code_size + 16] *= \
-                           max_regress_range
+                               max_regress_range
                 if pred_bbox2d:
                     bbox[:, -4:] *= stride
-        else:
-            if pred_bbox2d:
-                bbox[:, -4:] = bbox.clone()[:, -4:].exp()
+        elif pred_bbox2d:
+            bbox[:, -4:] = bbox.clone()[:, -4:].exp()
         return bbox
 
     def decode_prob_depth(self, depth_cls_preds, depth_range, depth_unit,

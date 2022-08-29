@@ -82,8 +82,7 @@ class AnchorFreeBBoxCoder(PartialBinBasedBBoxCoder):
         # decode bbox size
         bbox_size = torch.clamp(bbox_out['size'] * 2, min=0.1)
 
-        bbox3d = torch.cat([center, bbox_size, dir_angle], dim=-1)
-        return bbox3d
+        return torch.cat([center, bbox_size, dir_angle], dim=-1)
 
     def split_pred(self, cls_preds, reg_preds, base_xyz):
         """Split predicted features to specific parts.
@@ -96,9 +95,7 @@ class AnchorFreeBBoxCoder(PartialBinBasedBBoxCoder):
         Returns:
             dict[str, torch.Tensor]: Split results.
         """
-        results = {}
-        results['obj_scores'] = cls_preds
-
+        results = {'obj_scores': cls_preds}
         start, end = 0, 0
         reg_preds_trans = reg_preds.transpose(2, 1)
 

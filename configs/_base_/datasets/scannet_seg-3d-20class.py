@@ -125,30 +125,35 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_train.pkl',
+        ann_file=f'{data_root}scannet_infos_train.pkl',
         pipeline=train_pipeline,
         classes=class_names,
         test_mode=False,
         ignore_index=len(class_names),
-        scene_idxs=data_root + 'seg_info/train_resampled_scene_idxs.npy',
-        file_client_args=file_client_args),
+        scene_idxs=f'{data_root}seg_info/train_resampled_scene_idxs.npy',
+        file_client_args=file_client_args,
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_val.pkl',
+        ann_file=f'{data_root}scannet_infos_val.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         ignore_index=len(class_names),
-        file_client_args=file_client_args),
+        file_client_args=file_client_args,
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_val.pkl',
+        ann_file=f'{data_root}scannet_infos_val.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         ignore_index=len(class_names),
-        file_client_args=file_client_args))
+        file_client_args=file_client_args,
+    ),
+)
+
 
 evaluation = dict(pipeline=eval_pipeline)

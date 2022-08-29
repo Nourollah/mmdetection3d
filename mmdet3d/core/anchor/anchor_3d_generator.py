@@ -65,7 +65,7 @@ class Anchor3DRangeGenerator(object):
         self.size_per_range = size_per_range
 
     def __repr__(self):
-        s = self.__class__.__name__ + '('
+        s = f'{self.__class__.__name__}('
         s += f'anchor_range={self.ranges},\n'
         s += f'scales={self.scales},\n'
         s += f'sizes={self.sizes},\n'
@@ -139,16 +139,18 @@ class Anchor3DRangeGenerator(object):
                 self.rotations,
                 device=device)
 
-        mr_anchors = []
-        for anchor_range, anchor_size in zip(self.ranges, self.sizes):
-            mr_anchors.append(
-                self.anchors_single_range(
-                    featmap_size,
-                    anchor_range,
-                    scale,
-                    anchor_size,
-                    self.rotations,
-                    device=device))
+        mr_anchors = [
+            self.anchors_single_range(
+                featmap_size,
+                anchor_range,
+                scale,
+                anchor_size,
+                self.rotations,
+                device=device,
+            )
+            for anchor_range, anchor_size in zip(self.ranges, self.sizes)
+        ]
+
         mr_anchors = torch.cat(mr_anchors, dim=-3)
         return mr_anchors
 
@@ -373,11 +375,9 @@ class AlignedAnchor3DRangeGeneratorPerCls(AlignedAnchor3DRangeGenerator):
                 should be [num_sizes/ranges*num_rots*featmap_size,
                 box_code_size].
         """
-        multi_level_anchors = []
         anchors = self.multi_cls_grid_anchors(
             featmap_sizes, self.scales[0], device=device)
-        multi_level_anchors.append(anchors)
-        return multi_level_anchors
+        return [anchors]
 
     def multi_cls_grid_anchors(self, featmap_sizes, scale, device='cuda'):
         """Generate grid anchors of a single level feature map for multi-class
@@ -396,8 +396,8 @@ class AlignedAnchor3DRangeGeneratorPerCls(AlignedAnchor3DRangeGenerator):
             torch.Tensor: Anchors in the overall feature map.
         """
         assert len(featmap_sizes) == len(self.sizes) == len(self.ranges), \
-            'The number of different feature map sizes anchor sizes and ' + \
-            'ranges should be the same.'
+                'The number of different feature map sizes anchor sizes and ' + \
+                'ranges should be the same.'
 
         multi_cls_anchors = []
         for i in range(len(featmap_sizes)):
@@ -412,8 +412,8 @@ class AlignedAnchor3DRangeGeneratorPerCls(AlignedAnchor3DRangeGenerator):
             ndim = len(featmap_sizes[i])
             anchors = anchors.view(*featmap_sizes[i], -1, anchors.size(-1))
             # [*featmap_size, num_sizes/ranges*num_rots, box_code_size]
-            anchors = anchors.permute(ndim, *range(0, ndim), ndim + 1)
+            anchors = anchors.permute(ndim, *range(ndim), ndim + 1)
             # [num_sizes/ranges*num_rots, *featmap_size, box_code_size]
             multi_cls_anchors.append(anchors.reshape(-1, anchors.size(-1)))
-            # [num_sizes/ranges*num_rots*featmap_size, box_code_size]
+                # [num_sizes/ranges*num_rots*featmap_size, box_code_size]
         return multi_cls_anchors

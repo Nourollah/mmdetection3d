@@ -158,8 +158,7 @@ class BaseInstance3DBoxes(object):
 
         centers = bboxes_xywh[:, :2]
         dims = bboxes_xywh[:, 2:]
-        bev_boxes = torch.cat([centers - dims / 2, centers + dims / 2], dim=-1)
-        return bev_boxes
+        return torch.cat([centers - dims / 2, centers + dims / 2], dim=-1)
 
     def in_range_bev(self, box_range):
         """Check whether the boxes are in the given range.
@@ -176,11 +175,12 @@ class BaseInstance3DBoxes(object):
         Returns:
             torch.Tensor: Whether each box is inside the reference range.
         """
-        in_range_flags = ((self.bev[:, 0] > box_range[0])
-                          & (self.bev[:, 1] > box_range[1])
-                          & (self.bev[:, 0] < box_range[2])
-                          & (self.bev[:, 1] < box_range[3]))
-        return in_range_flags
+        return (
+            (self.bev[:, 0] > box_range[0])
+            & (self.bev[:, 1] > box_range[1])
+            & (self.bev[:, 0] < box_range[2])
+            & (self.bev[:, 1] < box_range[3])
+        )
 
     @abstractmethod
     def rotate(self, angle, points=None):
@@ -233,13 +233,14 @@ class BaseInstance3DBoxes(object):
             torch.Tensor: A binary vector indicating whether each box is
                 inside the reference range.
         """
-        in_range_flags = ((self.tensor[:, 0] > box_range[0])
-                          & (self.tensor[:, 1] > box_range[1])
-                          & (self.tensor[:, 2] > box_range[2])
-                          & (self.tensor[:, 0] < box_range[3])
-                          & (self.tensor[:, 1] < box_range[4])
-                          & (self.tensor[:, 2] < box_range[5]))
-        return in_range_flags
+        return (
+            (self.tensor[:, 0] > box_range[0])
+            & (self.tensor[:, 1] > box_range[1])
+            & (self.tensor[:, 2] > box_range[2])
+            & (self.tensor[:, 0] < box_range[3])
+            & (self.tensor[:, 1] < box_range[4])
+            & (self.tensor[:, 2] < box_range[5])
+        )
 
     @abstractmethod
     def convert_to(self, dst, rt_mat=None):
@@ -296,9 +297,7 @@ class BaseInstance3DBoxes(object):
         size_x = box[..., 3]
         size_y = box[..., 4]
         size_z = box[..., 5]
-        keep = ((size_x > threshold)
-                & (size_y > threshold) & (size_z > threshold))
-        return keep
+        return (size_x > threshold) & (size_y > threshold) & (size_z > threshold)
 
     def __getitem__(self, item):
         """
@@ -352,13 +351,11 @@ class BaseInstance3DBoxes(object):
             return cls(torch.empty(0))
         assert all(isinstance(box, cls) for box in boxes_list)
 
-        # use torch.cat (v.s. layers.cat)
-        # so the returned boxes never share storage with input
-        cat_boxes = cls(
+        return cls(
             torch.cat([b.tensor for b in boxes_list], dim=0),
             box_dim=boxes_list[0].tensor.shape[1],
-            with_yaw=boxes_list[0].with_yaw)
-        return cat_boxes
+            with_yaw=boxes_list[0].with_yaw,
+        )
 
     def to(self, device):
         """Convert current boxes to a specific device.
@@ -419,7 +416,7 @@ class BaseInstance3DBoxes(object):
         assert isinstance(boxes1, BaseInstance3DBoxes)
         assert isinstance(boxes2, BaseInstance3DBoxes)
         assert type(boxes1) == type(boxes2), '"boxes1" and "boxes2" should' \
-            f'be in the same type, got {type(boxes1)} and {type(boxes2)}.'
+                f'be in the same type, got {type(boxes1)} and {type(boxes2)}.'
 
         boxes1_top_height = boxes1.top_height.view(-1, 1)
         boxes1_bottom_height = boxes1.bottom_height.view(-1, 1)
@@ -429,8 +426,7 @@ class BaseInstance3DBoxes(object):
         heighest_of_bottom = torch.max(boxes1_bottom_height,
                                        boxes2_bottom_height)
         lowest_of_top = torch.min(boxes1_top_height, boxes2_top_height)
-        overlaps_h = torch.clamp(lowest_of_top - heighest_of_bottom, min=0)
-        return overlaps_h
+        return torch.clamp(lowest_of_top - heighest_of_bottom, min=0)
 
     @classmethod
     def overlaps(cls, boxes1, boxes2, mode='iou'):
@@ -451,7 +447,7 @@ class BaseInstance3DBoxes(object):
         assert isinstance(boxes1, BaseInstance3DBoxes)
         assert isinstance(boxes2, BaseInstance3DBoxes)
         assert type(boxes1) == type(boxes2), '"boxes1" and "boxes2" should' \
-            f'be in the same type, got {type(boxes1)} and {type(boxes2)}.'
+                f'be in the same type, got {type(boxes1)} and {type(boxes2)}.'
 
         assert mode in ['iou', 'iof']
 
@@ -477,14 +473,11 @@ class BaseInstance3DBoxes(object):
         volume1 = boxes1.volume.view(-1, 1)
         volume2 = boxes2.volume.view(1, -1)
 
-        if mode == 'iou':
-            # the clamp func is used to avoid division of 0
-            iou3d = overlaps_3d / torch.clamp(
-                volume1 + volume2 - overlaps_3d, min=1e-8)
-        else:
-            iou3d = overlaps_3d / torch.clamp(volume1, min=1e-8)
-
-        return iou3d
+        return (
+            overlaps_3d / torch.clamp(volume1 + volume2 - overlaps_3d, min=1e-8)
+            if mode == 'iou'
+            else overlaps_3d / torch.clamp(volume1, min=1e-8)
+        )
 
     def new_box(self, data):
         """Create a new box object with data.
@@ -499,8 +492,12 @@ class BaseInstance3DBoxes(object):
             :obj:`BaseInstance3DBoxes`: A new bbox object with ``data``,
                 the object's other properties are similar to ``self``.
         """
-        new_tensor = self.tensor.new_tensor(data) \
-            if not isinstance(data, torch.Tensor) else data.to(self.device)
+        new_tensor = (
+            data.to(self.device)
+            if isinstance(data, torch.Tensor)
+            else self.tensor.new_tensor(data)
+        )
+
         original_type = type(self)
         return original_type(
             new_tensor, box_dim=self.box_dim, with_yaw=self.with_yaw)
@@ -523,16 +520,12 @@ class BaseInstance3DBoxes(object):
             If a point is enclosed by multiple boxes, the index of the
             first box will be returned.
         """
-        if boxes_override is not None:
-            boxes = boxes_override
-        else:
-            boxes = self.tensor
+        boxes = boxes_override if boxes_override is not None else self.tensor
         if points.dim() == 2:
             points = points.unsqueeze(0)
-        box_idx = points_in_boxes_part(points,
-                                       boxes.unsqueeze(0).to(
-                                           points.device)).squeeze(0)
-        return box_idx
+        return points_in_boxes_part(
+            points, boxes.unsqueeze(0).to(points.device)
+        ).squeeze(0)
 
     def points_in_boxes_all(self, points, boxes_override=None):
         """Find all boxes in which each point is.
@@ -549,11 +542,7 @@ class BaseInstance3DBoxes(object):
                 tensor as A, if the m^th point is in the t^th box, then
                 `A[m, t] == 1`, elsewise `A[m, t] == 0`.
         """
-        if boxes_override is not None:
-            boxes = boxes_override
-        else:
-            boxes = self.tensor
-
+        boxes = boxes_override if boxes_override is not None else self.tensor
         points_clone = points.clone()[..., :3]
         if points_clone.dim() == 2:
             points_clone = points_clone.unsqueeze(0)

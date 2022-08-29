@@ -33,7 +33,7 @@ file_client_args = dict(backend='disk')
 
 db_sampler = dict(
     data_root=data_root,
-    info_path=data_root + 'nuscenes_dbinfos_train.pkl',
+    info_path=f'{data_root}nuscenes_dbinfos_train.pkl',
     rate=1.0,
     bbox_code_size=7,
     prepare=dict(
@@ -48,7 +48,9 @@ db_sampler = dict(
             barrier=5,
             motorcycle=5,
             bicycle=5,
-            pedestrian=5)),
+            pedestrian=5,
+        ),
+    ),
     classes=class_names,
     sample_groups=dict(
         car=2,
@@ -60,13 +62,17 @@ db_sampler = dict(
         motorcycle=6,
         bicycle=6,
         pedestrian=2,
-        traffic_cone=2),
+        traffic_cone=2,
+    ),
     points_loader=dict(
         type='LoadPointsFromFile',
         coord_type='LIDAR',
         load_dim=5,
         use_dim=[0, 1, 2, 3, 4],
-        file_client_args=file_client_args))
+        file_client_args=file_client_args,
+    ),
+)
+
 
 train_pipeline = [
     dict(
@@ -166,21 +172,24 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file=data_root + 'nuscenes_infos_train.pkl',
+            ann_file=f'{data_root}nuscenes_infos_train.pkl',
             pipeline=train_pipeline,
             load_interval=train_load_interval,
             classes=class_names,
             with_velocity=with_velocity,
             test_mode=False,
             use_valid_flag=True,
-            # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-            # and box_type_3d='Depth' in sunrgbd and scannet dataset.
-            box_type_3d='LiDAR')),
+            box_type_3d='LiDAR',
+        ),
+    ),
     val=dict(
         pipeline=test_pipeline,
         classes=class_names,
-        with_velocity=with_velocity),
+        with_velocity=with_velocity,
+    ),
     test=dict(
         pipeline=test_pipeline,
         classes=class_names,
-        with_velocity=with_velocity))
+        with_velocity=with_velocity,
+    ),
+)

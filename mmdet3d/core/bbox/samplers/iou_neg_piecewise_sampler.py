@@ -61,66 +61,65 @@ class IoUNegPiecewiseSampler(RandomSampler):
             neg_inds = neg_inds.squeeze(1)
         if len(neg_inds) <= 0:
             return neg_inds.squeeze(1)
-        else:
-            neg_inds_choice = neg_inds.new_zeros([0])
-            extend_num = 0
-            max_overlaps = assign_result.max_overlaps[neg_inds]
+        neg_inds_choice = neg_inds.new_zeros([0])
+        extend_num = 0
+        max_overlaps = assign_result.max_overlaps[neg_inds]
 
-            for piece_inds in range(self.neg_piece_num):
-                if piece_inds == self.neg_piece_num - 1:  # for the last piece
-                    piece_expected_num = num_expected - len(neg_inds_choice)
-                    min_iou_thr = 0
-                else:
-                    # if the numbers of negative samplers in previous
-                    # pieces are less than the expected number, extend
-                    # the same number in the current piece.
-                    piece_expected_num = int(
-                        num_expected *
-                        self.neg_piece_fractions[piece_inds]) + extend_num
-                    min_iou_thr = self.neg_iou_thr[piece_inds + 1]
-                max_iou_thr = self.neg_iou_thr[piece_inds]
-                piece_neg_inds = torch.nonzero(
-                    (max_overlaps >= min_iou_thr)
-                    & (max_overlaps < max_iou_thr),
-                    as_tuple=False).view(-1)
+        for piece_inds in range(self.neg_piece_num):
+            if piece_inds == self.neg_piece_num - 1:  # for the last piece
+                piece_expected_num = num_expected - len(neg_inds_choice)
+                min_iou_thr = 0
+            else:
+                # if the numbers of negative samplers in previous
+                # pieces are less than the expected number, extend
+                # the same number in the current piece.
+                piece_expected_num = int(
+                    num_expected *
+                    self.neg_piece_fractions[piece_inds]) + extend_num
+                min_iou_thr = self.neg_iou_thr[piece_inds + 1]
+            max_iou_thr = self.neg_iou_thr[piece_inds]
+            piece_neg_inds = torch.nonzero(
+                (max_overlaps >= min_iou_thr)
+                & (max_overlaps < max_iou_thr),
+                as_tuple=False).view(-1)
 
-                if len(piece_neg_inds) < piece_expected_num:
-                    neg_inds_choice = torch.cat(
-                        [neg_inds_choice, neg_inds[piece_neg_inds]], dim=0)
-                    extend_num += piece_expected_num - len(piece_neg_inds)
+            if len(piece_neg_inds) < piece_expected_num:
+                neg_inds_choice = torch.cat(
+                    [neg_inds_choice, neg_inds[piece_neg_inds]], dim=0)
+                extend_num += piece_expected_num - len(piece_neg_inds)
 
-                    # for the last piece
-                    if piece_inds == self.neg_piece_num - 1:
-                        extend_neg_num = num_expected - len(neg_inds_choice)
-                        # if the numbers of nagetive samples > 0, we will
-                        # randomly select num_expected samples in last piece
-                        if piece_neg_inds.numel() > 0:
-                            rand_idx = torch.randint(
-                                low=0,
-                                high=piece_neg_inds.numel(),
-                                size=(extend_neg_num, )).long()
-                            neg_inds_choice = torch.cat(
-                                [neg_inds_choice, piece_neg_inds[rand_idx]],
-                                dim=0)
-                        # if the numbers of nagetive samples == 0, we will
-                        # randomly select num_expected samples in all
-                        # previous pieces
-                        else:
-                            rand_idx = torch.randint(
-                                low=0,
-                                high=neg_inds_choice.numel(),
-                                size=(extend_neg_num, )).long()
-                            neg_inds_choice = torch.cat(
-                                [neg_inds_choice, neg_inds_choice[rand_idx]],
-                                dim=0)
-                else:
-                    piece_choice = self.random_choice(piece_neg_inds,
-                                                      piece_expected_num)
-                    neg_inds_choice = torch.cat(
-                        [neg_inds_choice, neg_inds[piece_choice]], dim=0)
-                    extend_num = 0
-            assert len(neg_inds_choice) == num_expected
-            return neg_inds_choice
+                # for the last piece
+                if piece_inds == self.neg_piece_num - 1:
+                    extend_neg_num = num_expected - len(neg_inds_choice)
+                    # if the numbers of nagetive samples > 0, we will
+                    # randomly select num_expected samples in last piece
+                    if piece_neg_inds.numel() > 0:
+                        rand_idx = torch.randint(
+                            low=0,
+                            high=piece_neg_inds.numel(),
+                            size=(extend_neg_num, )).long()
+                        neg_inds_choice = torch.cat(
+                            [neg_inds_choice, piece_neg_inds[rand_idx]],
+                            dim=0)
+                    # if the numbers of nagetive samples == 0, we will
+                    # randomly select num_expected samples in all
+                    # previous pieces
+                    else:
+                        rand_idx = torch.randint(
+                            low=0,
+                            high=neg_inds_choice.numel(),
+                            size=(extend_neg_num, )).long()
+                        neg_inds_choice = torch.cat(
+                            [neg_inds_choice, neg_inds_choice[rand_idx]],
+                            dim=0)
+            else:
+                piece_choice = self.random_choice(piece_neg_inds,
+                                                  piece_expected_num)
+                neg_inds_choice = torch.cat(
+                    [neg_inds_choice, neg_inds[piece_choice]], dim=0)
+                extend_num = 0
+        assert len(neg_inds_choice) == num_expected
+        return neg_inds_choice
 
     def sample(self,
                assign_result,
@@ -167,8 +166,7 @@ class IoUNegPiecewiseSampler(RandomSampler):
         if self.neg_pos_ub >= 0:
             _pos = max(1, num_sampled_pos)
             neg_upper_bound = int(self.neg_pos_ub * _pos)
-            if num_expected_neg > neg_upper_bound:
-                num_expected_neg = neg_upper_bound
+            num_expected_neg = min(num_expected_neg, neg_upper_bound)
         neg_inds = self.neg_sampler._sample_neg(
             assign_result, num_expected_neg, bboxes=bboxes, **kwargs)
 

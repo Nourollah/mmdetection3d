@@ -20,11 +20,12 @@ file_client_args = dict(backend='disk')
 
 db_sampler = dict(
     data_root=data_root,
-    info_path=data_root + 'kitti_dbinfos_train.pkl',
+    info_path=f'{data_root}kitti_dbinfos_train.pkl',
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
-        filter_by_min_points=dict(Car=5, Pedestrian=10, Cyclist=10)),
+        filter_by_min_points=dict(Car=5, Pedestrian=10, Cyclist=10),
+    ),
     classes=class_names,
     sample_groups=dict(Car=12, Pedestrian=6, Cyclist=6),
     points_loader=dict(
@@ -32,8 +33,11 @@ db_sampler = dict(
         coord_type='LIDAR',
         load_dim=4,
         use_dim=4,
-        file_client_args=file_client_args),
-    file_client_args=file_client_args)
+        file_client_args=file_client_args,
+    ),
+    file_client_args=file_client_args,
+)
+
 
 train_pipeline = [
     dict(
@@ -118,21 +122,21 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file=data_root + 'kitti_infos_train.pkl',
+            ann_file=f'{data_root}kitti_infos_train.pkl',
             split='training',
             pts_prefix='velodyne_reduced',
             pipeline=train_pipeline,
             modality=input_modality,
             classes=class_names,
             test_mode=False,
-            # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-            # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='LiDAR',
-            file_client_args=file_client_args)),
+            file_client_args=file_client_args,
+        ),
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'kitti_infos_val.pkl',
+        ann_file=f'{data_root}kitti_infos_val.pkl',
         split='training',
         pts_prefix='velodyne_reduced',
         pipeline=test_pipeline,
@@ -140,11 +144,12 @@ data = dict(
         classes=class_names,
         test_mode=True,
         box_type_3d='LiDAR',
-        file_client_args=file_client_args),
+        file_client_args=file_client_args,
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'kitti_infos_val.pkl',
+        ann_file=f'{data_root}kitti_infos_val.pkl',
         split='training',
         pts_prefix='velodyne_reduced',
         pipeline=test_pipeline,
@@ -152,6 +157,9 @@ data = dict(
         classes=class_names,
         test_mode=True,
         box_type_3d='LiDAR',
-        file_client_args=file_client_args))
+        file_client_args=file_client_args,
+    ),
+)
+
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)

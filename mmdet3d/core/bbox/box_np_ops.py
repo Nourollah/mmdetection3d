@@ -26,7 +26,7 @@ def camera_to_lidar(points, r_rect, velo2cam):
     Returns:
         np.ndarray, shape=[N, 3]: Points in lidar coordinate.
     """
-    points_shape = list(points.shape[0:-1])
+    points_shape = list(points.shape[:-1])
     if points.shape[-1] == 3:
         points = np.concatenate([points, np.ones(points_shape + [1])], axis=-1)
     lidar_points = points @ np.linalg.inv((r_rect @ velo2cam).T)
@@ -88,9 +88,9 @@ def corners_nd(dims, origin=0.5):
     elif ndim == 3:
         corners_norm = corners_norm[[0, 1, 3, 2, 4, 5, 7, 6]]
     corners_norm = corners_norm - np.array(origin, dtype=dims.dtype)
-    corners = dims.reshape([-1, 1, ndim]) * corners_norm.reshape(
-        [1, 2**ndim, ndim])
-    return corners
+    return dims.reshape([-1, 1, ndim]) * corners_norm.reshape(
+        [1, 2**ndim, ndim]
+    )
 
 
 def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
@@ -161,11 +161,10 @@ def depth_to_lidar_points(depth, trunc_pixel, P2, r_rect, velo2cam):
         np.ndarray: Points in lidar coordinates.
     """
     pts = depth_to_points(depth, trunc_pixel)
-    points_shape = list(pts.shape[0:-1])
+    points_shape = list(pts.shape[:-1])
     points = np.concatenate([pts, np.ones(points_shape + [1])], axis=-1)
     points = points @ np.linalg.inv(P2.T)
-    lidar_points = camera_to_lidar(points, r_rect, velo2cam)
-    return lidar_points
+    return camera_to_lidar(points, r_rect, velo2cam)
 
 
 def center_to_corner_box3d(centers,
@@ -294,7 +293,7 @@ def rotation_points_single_angle(points, angle, axis=0):
         rot_mat_T = np.array(
             [[rot_cos, 0, rot_sin], [0, 1, 0], [-rot_sin, 0, rot_cos]],
             dtype=points.dtype)
-    elif axis == 2 or axis == -1:
+    elif axis in [2, -1]:
         rot_mat_T = np.array(
             [[rot_cos, rot_sin, 0], [-rot_sin, rot_cos, 0], [0, 0, 1]],
             dtype=points.dtype)
@@ -324,8 +323,7 @@ def box3d_to_bbox(box3d, P2):
     # box_corners_in_image: [N, 8, 2]
     minxy = np.min(box_corners_in_image, axis=1)
     maxxy = np.max(box_corners_in_image, axis=1)
-    bbox = np.concatenate([minxy, maxxy], axis=1)
-    return bbox
+    return np.concatenate([minxy, maxxy], axis=1)
 
 
 def corner_to_surfaces_3d(corners):
@@ -338,16 +336,16 @@ def corner_to_surfaces_3d(corners):
     Returns:
         np.ndarray: Surfaces with the shape of (N, 6, 4, 3).
     """
-    # box_corners: [N, 8, 3], must from corner functions in this module
-    surfaces = np.array([
-        [corners[:, 0], corners[:, 1], corners[:, 2], corners[:, 3]],
-        [corners[:, 7], corners[:, 6], corners[:, 5], corners[:, 4]],
-        [corners[:, 0], corners[:, 3], corners[:, 7], corners[:, 4]],
-        [corners[:, 1], corners[:, 5], corners[:, 6], corners[:, 2]],
-        [corners[:, 0], corners[:, 4], corners[:, 5], corners[:, 1]],
-        [corners[:, 3], corners[:, 2], corners[:, 6], corners[:, 7]],
-    ]).transpose([2, 0, 1, 3])
-    return surfaces
+    return np.array(
+        [
+            [corners[:, 0], corners[:, 1], corners[:, 2], corners[:, 3]],
+            [corners[:, 7], corners[:, 6], corners[:, 5], corners[:, 4]],
+            [corners[:, 0], corners[:, 3], corners[:, 7], corners[:, 4]],
+            [corners[:, 1], corners[:, 5], corners[:, 6], corners[:, 2]],
+            [corners[:, 0], corners[:, 4], corners[:, 5], corners[:, 1]],
+            [corners[:, 3], corners[:, 2], corners[:, 6], corners[:, 7]],
+        ]
+    ).transpose([2, 0, 1, 3])
 
 
 def points_in_rbbox(points, rbbox, z_axis=2, origin=(0.5, 0.5, 0)):
@@ -372,8 +370,7 @@ def points_in_rbbox(points, rbbox, z_axis=2, origin=(0.5, 0.5, 0)):
     rbbox_corners = center_to_corner_box3d(
         rbbox[:, :3], rbbox[:, 3:6], rbbox[:, 6], origin=origin, axis=z_axis)
     surfaces = corner_to_surfaces_3d(rbbox_corners)
-    indices = points_in_convex_polygon_3d_jit(points[:, :3], surfaces)
-    return indices
+    return points_in_convex_polygon_3d_jit(points[:, :3], surfaces)
 
 
 def minmax_to_corner_2d(minmax_box):
@@ -475,8 +472,7 @@ def rbbox2d_to_near_bbox(rbboxes):
     rots_0_pi_div_2 = np.abs(limit_period(rots, 0.5, np.pi))
     cond = (rots_0_pi_div_2 > np.pi / 4)[..., np.newaxis]
     bboxes_center = np.where(cond, rbboxes[:, [0, 1, 3, 2]], rbboxes[:, :4])
-    bboxes = center_to_minmax_2d(bboxes_center[:, :2], bboxes_center[:, 2:])
-    return bboxes
+    return center_to_minmax_2d(bboxes_center[:, :2], bboxes_center[:, 2:])
 
 
 @numba.jit(nopython=True)
@@ -610,8 +606,7 @@ def get_frustum(bbox_image, C, near_clip=0.001, far_clip=100):
         [fku / far_clip, -fkv / far_clip], dtype=C.dtype)
     ret_xy = np.concatenate([near_box_corners, far_box_corners],
                             axis=0)  # [8, 2]
-    ret_xyz = np.concatenate([ret_xy, z_points], axis=1)
-    return ret_xyz
+    return np.concatenate([ret_xy, z_points], axis=1)
 
 
 def surface_equ_3d(polygon_surfaces):

@@ -10,18 +10,20 @@ data_root = './data/s3dis/'
 data = dict(
     samples_per_gpu=32,
     train=dict(
-        ann_files=[
-            data_root + f's3dis_infos_Area_{i}.pkl' for i in train_area
-        ],
+        ann_files=[f'{data_root}s3dis_infos_Area_{i}.pkl' for i in train_area],
         scene_idxs=[
-            data_root + f'seg_info/Area_{i}_resampled_scene_idxs.npy'
+            f'{data_root}seg_info/Area_{i}_resampled_scene_idxs.npy'
             for i in train_area
-        ]),
+        ],
+    ),
     val=dict(
-        ann_files=data_root + f's3dis_infos_Area_{test_area}.pkl',
-        scene_idxs=data_root +
-        f'seg_info/Area_{test_area}_resampled_scene_idxs.npy'),
-    test=dict(ann_files=data_root + f's3dis_infos_Area_{test_area}.pkl'))
+        ann_files=f'{data_root}s3dis_infos_Area_{test_area}.pkl',
+        scene_idxs=data_root
+        + f'seg_info/Area_{test_area}_resampled_scene_idxs.npy',
+    ),
+    test=dict(ann_files=f'{data_root}s3dis_infos_Area_{test_area}.pkl'),
+)
+
 
 evaluation = dict(interval=2)
 

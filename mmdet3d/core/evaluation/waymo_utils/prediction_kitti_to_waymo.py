@@ -52,10 +52,11 @@ class KITTI2Waymo(object):
         self.waymo_results_final_path = waymo_results_final_path
         self.prefix = prefix
         self.workers = int(workers)
-        self.name2idx = {}
-        for idx, result in enumerate(kitti_result_files):
-            if len(result['sample_idx']) > 0:
-                self.name2idx[str(result['sample_idx'][0])] = idx
+        self.name2idx = {
+            str(result['sample_idx'][0]): idx
+            for idx, result in enumerate(kitti_result_files)
+            if len(result['sample_idx']) > 0
+        }
 
         # turn on eager execution for older tensorflow versions
         if int(tf.__version__.split('.')[0]) < 2:
@@ -196,7 +197,7 @@ class KITTI2Waymo(object):
 
             if filename in self.name2idx:
                 kitti_result = \
-                    self.kitti_result_files[self.name2idx[filename]]
+                        self.kitti_result_files[self.name2idx[filename]]
                 objects = self.parse_objects(kitti_result, T_k2w, context_name,
                                              frame_timestamp_micros)
             else:

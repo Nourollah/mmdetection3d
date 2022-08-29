@@ -79,26 +79,33 @@ data = dict(
                 dict(
                     type=dataset_type,
                     data_root=data_root,
-                    ann_file=data_root + f's3dis_infos_Area_{i}.pkl',
+                    ann_file=f'{data_root}s3dis_infos_Area_{i}.pkl',
                     pipeline=train_pipeline,
                     filter_empty_gt=True,
                     classes=class_names,
-                    box_type_3d='Depth') for i in train_area
+                    box_type_3d='Depth',
+                )
+                for i in train_area
             ],
-            separate_eval=False)),
+            separate_eval=False,
+        ),
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + f's3dis_infos_Area_{test_area}.pkl',
+        ann_file=f'{data_root}s3dis_infos_Area_{test_area}.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
-        box_type_3d='Depth'),
+        box_type_3d='Depth',
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + f's3dis_infos_Area_{test_area}.pkl',
+        ann_file=f'{data_root}s3dis_infos_Area_{test_area}.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
-        box_type_3d='Depth'))
+        box_type_3d='Depth',
+    ),
+)

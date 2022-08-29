@@ -56,7 +56,7 @@ class FCOS3DBBoxCoder(BaseBBoxCoder):
         """
         # scale the bbox of different level
         # only apply to offset, depth and size prediction
-        scale_offset, scale_depth, scale_size = scale[0:3]
+        scale_offset, scale_depth, scale_size = scale[:3]
 
         clone_bbox = bbox.clone()
         bbox[:, :2] = scale_offset(clone_bbox[:, :2]).float()
@@ -71,8 +71,8 @@ class FCOS3DBBoxCoder(BaseBBoxCoder):
             bbox[:, 2] = mean + bbox.clone()[:, 2] * std
         else:  # multi-class priors
             assert len(self.base_depths) == cls_score.shape[1], \
-                'The number of multi-class depth priors should be equal to ' \
-                'the number of categories.'
+                    'The number of multi-class depth priors should be equal to ' \
+                    'the number of categories.'
             indices = cls_score.max(dim=1)[1]
             depth_priors = cls_score.new_tensor(
                 self.base_depths)[indices, :].permute(0, 3, 1, 2)
@@ -83,19 +83,18 @@ class FCOS3DBBoxCoder(BaseBBoxCoder):
         bbox[:, 3:6] = bbox[:, 3:6].exp()
         if self.base_dims is not None:
             assert len(self.base_dims) == cls_score.shape[1], \
-                'The number of anchor sizes should be equal to the number ' \
-                'of categories.'
+                    'The number of anchor sizes should be equal to the number ' \
+                    'of categories.'
             indices = cls_score.max(dim=1)[1]
             size_priors = cls_score.new_tensor(
                 self.base_dims)[indices, :].permute(0, 3, 1, 2)
             bbox[:, 3:6] = size_priors * bbox.clone()[:, 3:6]
 
         assert self.norm_on_bbox is True, 'Setting norm_on_bbox to False '\
-            'has not been thoroughly tested for FCOS3D.'
-        if self.norm_on_bbox:
-            if not training:
-                # Note that this line is conducted only when testing
-                bbox[:, :2] *= stride
+                'has not been thoroughly tested for FCOS3D.'
+        if self.norm_on_bbox and not training:
+            # Note that this line is conducted only when testing
+            bbox[:, :2] *= stride
 
         return bbox
 

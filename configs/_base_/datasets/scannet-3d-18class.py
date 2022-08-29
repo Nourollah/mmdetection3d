@@ -119,31 +119,35 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file=data_root + 'scannet_infos_train.pkl',
+            ann_file=f'{data_root}scannet_infos_train.pkl',
             pipeline=train_pipeline,
             filter_empty_gt=False,
             classes=class_names,
-            # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-            # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='Depth',
-            file_client_args=file_client_args)),
+            file_client_args=file_client_args,
+        ),
+    ),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_val.pkl',
+        ann_file=f'{data_root}scannet_infos_val.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         box_type_3d='Depth',
-        file_client_args=file_client_args),
+        file_client_args=file_client_args,
+    ),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_val.pkl',
+        ann_file=f'{data_root}scannet_infos_val.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         box_type_3d='Depth',
-        file_client_args=file_client_args))
+        file_client_args=file_client_args,
+    ),
+)
+
 
 evaluation = dict(pipeline=eval_pipeline)
